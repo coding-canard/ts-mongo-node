@@ -6,8 +6,9 @@ import {
   ObjectIdColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  BaseEntity
+  BaseEntity, OneToMany
 } from "typeorm";
+import { Post } from "./Post";
 
 @ObjectType()
 @Entity()
@@ -30,6 +31,9 @@ export class User extends BaseEntity {
   @Field(() => Int)
   @Column({type: "int"})
   followers: number = 0;
+
+  @OneToMany(() => Post, (post) => post.creator)
+  posts: Post[];
 
   @Field(() => String)
   @CreateDateColumn()
