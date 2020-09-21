@@ -6,7 +6,7 @@ import { User } from "../entities/User";
 export class UserResolver{
 
   @Mutation(() => User!)
-  async registerUser(
+  async register(
     @Arg("email", () => String) email: string,
     @Arg("password", () => String) password: string,
     @Arg("username", () => String) username: string
