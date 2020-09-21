@@ -14,8 +14,6 @@ import { UserResolver } from "./resolvers/UserResolver";
 
 dotenv.config();
 
-// console.log("SECRET\n", process.env.SECRET)
-
 const main = async() => {
   await createConnection();
 
@@ -53,7 +51,7 @@ const main = async() => {
 
   apolloServer.applyMiddleware({ app });
 
-  app.listen(process.env.PORT, () => console.log(`Listening on port ${process.env.PORT}`));
+  app.listen(process.env.PORT, () => console.log(`Listening on port ${process.env.SERVER_PORT}`));
 }
 
 main().catch((err) => console.log(err));
