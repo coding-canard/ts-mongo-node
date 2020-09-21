@@ -33,7 +33,7 @@ export class Post extends BaseEntity {
   publisher: string | null;
 
   @Field(() => Int)
-  @Column({type: "int", default: "0"})
+  @Column({type: "int"})
   claps: number = 0;
 
   @Field(() => String)

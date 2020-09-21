@@ -11,20 +11,14 @@ export class UserResolver{
     return users;
   }
 
-
   @Mutation(() => User!)
   async createUser(
     @Arg("email", () => String) email: string,
     @Arg("password", () => String) password: string,
-    @Arg("username", () => String, {nullable: true}) username?: string,
+    @Arg("username", () => String) username: string,
   ){
     const hashedPassword = await argon2.hash(password);
-    // if(!username){
-    //   username = email;
-    // }
     const user = await User.create({email, password: hashedPassword, username}).save();
-    console.log(user)
     return user;
   }
-
 }
