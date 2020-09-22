@@ -32,7 +32,7 @@ export class User extends BaseEntity {
   @Column({type: "int"})
   followers: number = 0;
 
-  @OneToMany(() => Post, (post) => post.creator)
+  @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
 
   @Field(() => String)

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import * as dotenv from 'dotenv';
 import express from "express";
-import { createConnection } from "typeorm";
+import { createConnection, getConnection } from "typeorm";
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import Redis from "ioredis";
@@ -16,6 +16,8 @@ dotenv.config();
 
 const main = async() => {
   await createConnection();
+
+  console.log(getConnection().options)
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({

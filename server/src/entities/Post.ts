@@ -25,10 +25,6 @@ export class Post extends BaseEntity {
   @Column()
   text!: string;
 
-  @Field(() => String)
-  @Column()
-  author!: string;
-
   @Field(() => String, {nullable: true})
   @Column()
   publisher: string | null;
@@ -37,13 +33,13 @@ export class Post extends BaseEntity {
   @Column({type: "int"})
   claps: number = 0;
 
-  @Field()
-  @Column()
-  creatorId!: number;
+  @Field(() => ID)
+  @ObjectIdColumn()
+  authorId!: ObjectID;
 
   @Field()
   @ManyToOne(() => User, (user) => user.posts)
-  creator!: User;
+  author!: User;
 
   @Field(() => String)
   @CreateDateColumn()

@@ -1,9 +1,15 @@
 import argon2 from 'argon2';
-import { Arg, Ctx, ID, Mutation, Resolver } from "type-graphql";
-import { User } from "../entities/User";
+import { Arg, Ctx, ID, Mutation, Query, Resolver } from "type-graphql";
+import { User } from './../entities/User';
 
 @Resolver()
 export class UserResolver{
+
+  @Query(() => [User]!)
+  async users(): Promise<User[]>{
+    const posts = await User.find({});
+    return posts;
+  }
 
   @Mutation(() => User!)
   async register(
@@ -42,7 +48,7 @@ export class UserResolver{
   }
 
   @Mutation(() => Boolean)
-  logout(@Ctx() { req, res }: any){
+  logout(@Ctx() { req, res }: any): Promise<boolean>{
     return new Promise((resolve) => 
       req.session.destroy((err: any) => {
         res.clearCookie(process.env.COOKIE_NAME);
