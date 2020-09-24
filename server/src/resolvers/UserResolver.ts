@@ -1,9 +1,19 @@
 import argon2 from 'argon2';
-import { Arg, Ctx, ID, Mutation, Query, Resolver } from "type-graphql";
+import {v4 as uuid} from 'uuid';
+import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 import { User } from './../entities/User';
+import { Post } from './../entities/Post';
+import { PostsLoader } from './../dataloaders/PostsLoader';
 
-@Resolver()
+@Resolver(User)
 export class UserResolver{
+
+  @FieldResolver(() => Post)
+  async posts(
+    @Root() user: User
+  ){
+    return PostsLoader.load(user.id as any);
+  }
 
   @Query(() => [User]!)
   async users(): Promise<User[]>{
@@ -18,7 +28,7 @@ export class UserResolver{
     @Arg("username", () => String) username: string
   ){
     const hashedPassword = await argon2.hash(password);
-    const user = await User.create({email, password: hashedPassword, username}).save();
+    const user = await User.create({id: uuid(), email, password: hashedPassword, username}).save();
     return user;
   }
 
@@ -42,7 +52,7 @@ export class UserResolver{
       throw new Error("Invalid credentials");
     }
 
-    ctx.req.session.userId = user._id;
+    ctx.req.session.userId = user.id;
 
     return user;
   }
@@ -63,13 +73,13 @@ export class UserResolver{
 
   @Mutation(() => Boolean)
   async deleteUser(
-    @Arg("id", () => ID) _id: string
+    @Arg("id", () => String) id: string
   ): Promise<boolean>{
-    const user = await User.findOne( _id );
+    const user = await User.findOne({where: { id }});
     if(!user){
       return false;
     }
-    await User.delete( _id );
+    await User.delete( id );
     return true;
   }
 }

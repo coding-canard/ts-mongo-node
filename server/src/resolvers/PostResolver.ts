@@ -1,30 +1,20 @@
-import { Arg, Ctx, FieldResolver, ID, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
+import {v4 as uuid} from 'uuid';
 import { Post } from "./../entities/Post";
 import { IsAuthenticated } from "../middlewares/IsAuthenticated";
 import { ContextType } from './../types/ContextType';
 import { User } from "./../entities/User";
-import DataLoader from "dataloader";
+import { UsersLoader } from "./../dataloaders/UsersLoader";
 
 @Resolver(Post)
 export class PostResolver {
 
   @FieldResolver(() => User)
-  author(
-    @Root() post: Post,
-    // @Ctx() { userLoader }: ContextType,
+  async author(
+    @Root() post: Post
    ){
-    const UserLoader = () => new DataLoader<number, User>(async (userIds) => {
-      const users = await User.findByIds(userIds as any[]);
-      const userIdToUser: Record<string, User> = {};
-      users.forEach((u) => {
-        userIdToUser[u._id as any] = u;
-      });
-    
-      const sortedUsers = userIds.map((userId) => userIdToUser[userId]);
-      return sortedUsers;
-    });
-    return UserLoader.load(post.authorId as any);
-  }
+      return UsersLoader.load(post.authorId as any);
+   }
 
   @Query(() => [Post]!)
   async posts(): Promise<Post[]>{
@@ -34,25 +24,25 @@ export class PostResolver {
 
   @Query(() => Post, {nullable: true})
   async post(
-    @Arg("id", () => ID) _id: string
+    @Arg("id", () => String) id: string
   ): Promise<Post | undefined>{
-    const posts = await Post.findOne( _id );
+    const posts = await Post.findOne({where: { id }});
     return posts;
   }
 
   // @Query(() => [Post]!, {nullable: true})
   // async authoredBy(
-  //   @Arg("author", () => String) author: string
+  //   @Arg("author", () => String) authorId: string
   // ): Promise<Post[]>{
-  //   const posts = await Post.find( { author });
+  //   const posts = await Post.find({where: { authorId }});;
   //   return posts;
   // }
 
   // @Query(() => [Post]!, {nullable: true})
   // async publishedBy(
-  //   @Arg("publisher", () => String) publisher: string
+  //   @Arg("publisher", () => String) publisherId: string
   // ): Promise<Post[]>{
-  //   const posts = await Post.find( { publisher });
+  //   const posts = await Post.findOne({where: { publisherId }});;
   //   return posts;
   // }
 
@@ -64,7 +54,7 @@ export class PostResolver {
     @Arg("text", () => String) text: string,
     @Arg("publisher", () => String, {nullable: true}) publisher?: string,    
   ): Promise<Post>{
-    const post = await Post.create({ title, text, authorId: req!.session!.userId, publisher }).save();
+    const post = await Post.create({id: uuid(), title, text, authorId: req!.session!.userId, publisher }).save();
     return post;
   }
 
@@ -72,13 +62,13 @@ export class PostResolver {
   @UseMiddleware(IsAuthenticated)
   async updatePost(
     @Ctx() ctx: ContextType,
-    @Arg("id", () => ID) _id: string,
+    @Arg("id", () => String) id: string,
     @Arg("title", () => String, {nullable: true}) title?: string,
     @Arg("text", () => String, {nullable: true}) text?: string,
     @Arg("publisher", () => String, {nullable: true}) publisher?: string
   ): Promise<Post | null>{
 
-    const post = await Post.findOne( _id );
+    const post = await Post.findOne({where: { id }});
     if(!post){
       return null;
     }
@@ -103,13 +93,13 @@ export class PostResolver {
   @Mutation(() => Boolean)
   @UseMiddleware(IsAuthenticated)
   async deletePost(
-    @Arg("id", () => ID) _id: string
+    @Arg("id", () => String) id: string
   ): Promise<boolean>{
-    const post = await Post.findOne( _id );
+    const post = await Post.findOne({where: { id }});
     if(!post){
       return false;
     }
-    await Post.delete( _id );
+    await Post.delete( id );
     return true;
   }
 

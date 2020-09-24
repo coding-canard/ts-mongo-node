@@ -1,37 +1,38 @@
-import { Field, ID, Int, ObjectType } from "type-graphql";
+import { Field, Int, ObjectType } from "type-graphql";
 import {
-  Entity,
-  ObjectID,
-  Column,
+  BaseEntity, Column,
+  CreateDateColumn, Entity,
   ObjectIdColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  BaseEntity, OneToMany
+  OneToMany, PrimaryColumn, UpdateDateColumn
 } from "typeorm";
 import { Post } from "./Post";
 
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
-  @Field(() => ID)
   @ObjectIdColumn()
-  readonly _id!: ObjectID;
+  _id!: string
 
   @Field(() => String)
-  @Column({unique: true})
+  @PrimaryColumn("string")
+  id!: string;
+
+  @Field(() => String)
+  @Column("string", {unique: true})
   email!: string;
 
-  @Column()
+  @Column("string")
   password!: string;
 
   @Field(() => String)
-  @Column({unique: true})
+  @Column("string", {unique: true})
   username!: string;
 
   @Field(() => Int)
   @Column({type: "int"})
   followers: number = 0;
 
+  @Field(() => [Post]!)
   @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
 
