@@ -79,7 +79,7 @@ export class UserResolver{
     if(!user){
       return false;
     }
-    await User.delete( id );
+    await User.delete({ id });
     return true;
   }
 }
