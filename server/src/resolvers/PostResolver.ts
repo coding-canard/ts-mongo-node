@@ -18,7 +18,7 @@ export class PostResolver {
 
   @Query(() => [Post]!)
   async posts(): Promise<Post[]>{
-    const posts = await Post.find({});
+    const posts = await (await Post.find({})).sort((p1, p2) => p1.createdAt < p2.createdAt ? 1 : -1);
     return posts;
   }
 
@@ -72,11 +72,9 @@ export class PostResolver {
     if(!post){
       return null;
     }
-
     if(ctx.req.session!.userId !== post.authorId){
-      throw new Error("Unauthorized - Only authors can edit");
+      throw new Error("Unauthorized - Only authors can edit their post");
     }
-
     if(typeof title !== "undefined"){
       post.title = title;
     }
@@ -93,12 +91,18 @@ export class PostResolver {
   @Mutation(() => Boolean)
   @UseMiddleware(IsAuthenticated)
   async deletePost(
+    @Ctx() ctx: ContextType,
     @Arg("id", () => String) id: string
   ): Promise<boolean>{
     const post = await Post.findOne({where: { id }});
     if(!post){
       return false;
     }
+
+    if(ctx.req.session!.userId !== post.authorId){
+      throw new Error("Unauthorized - Only authors can delete their posts");
+    }
+
     await Post.delete( id );
     return true;
   }
