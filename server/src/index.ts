@@ -1,65 +1,36 @@
 import "reflect-metadata";
 import * as dotenv from 'dotenv';
 import express from "express";
-import { createConnection, getConnection } from "typeorm";
+import { createConnection } from "typeorm";
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
-import Redis from "ioredis";
-import session from "express-session";
-import connectRedis from "connect-redis";
-// import cors from "cors";
-import { __PROD__, SESSION_SECRET } from './constants';
+import cookieParser from "cookie-parser";
+// import cors from 'cors';
+// import { corsConfig } from './configs/corsConfig';
 import { PostResolver } from './resolvers/PostResolver';
 import { UserResolver } from "./resolvers/UserResolver";
+import { ContextType } from "./types/ContextType";
 
 dotenv.config();
 
 const main = async() => {
   await createConnection();
 
-  console.log(getConnection().options)
-
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
       resolvers: [PostResolver, UserResolver],
-      validate: false
+      validate: false,
     }),
-    context: ({req, res}) => ({
-      req, res, redis
+    context: ({req, res}: ContextType) => ({
+      req, res, //redis
     }),
   });
 
   const app = express();
 
-  const RedisStore = connectRedis(session);
-  const redis = new Redis(process.env.REDIS_URL);
+  // app.use(cors(corsConfig));
 
-  // app.set("trust proxy", 1);
-
-  // app.use(
-  //   cors({
-  //     origin: process.env.CORS_ORIGIN,
-  //     credentials: true,
-  //   })
-  // );
-
-  app.use(session({
-    name: process.env.COOKIE_NAME,
-    store: new RedisStore({
-      client: redis,
-      disableTouch: true,
-    }),
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: __PROD__,
-      domain: __PROD__ ? "domain" : undefined,
-    },
-    secret: SESSION_SECRET,
-    saveUninitialized: false,
-    resave: false
-  }))
+  app.use(cookieParser());
 
   apolloServer.applyMiddleware({ app });
 
