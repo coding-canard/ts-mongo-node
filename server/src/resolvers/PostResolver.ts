@@ -1,5 +1,6 @@
 import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import {v4 as uuid} from 'uuid';
+import { AuthenticationError } from "apollo-server-express";
 import { Post } from "./../entities/Post";
 import { IsAuthenticated } from "../middlewares/IsAuthenticated";
 import { ContextType } from './../types/ContextType';
@@ -30,13 +31,13 @@ export class PostResolver {
     return posts;
   }
 
-  // @Query(() => [Post]!, {nullable: true})
-  // async authoredBy(
-  //   @Arg("author", () => String) authorId: string
-  // ): Promise<Post[]>{
-  //   const posts = await Post.find({where: { authorId }});;
-  //   return posts;
-  // }
+  @Query(() => [Post]!, {nullable: true})
+  async authoredBy(
+    @Arg("authorId", () => String) authorId: string
+  ): Promise<Post[]>{
+    const posts = await Post.find({where: { authorId }});;
+    return posts;
+  }
 
   // @Query(() => [Post]!, {nullable: true})
   // async publishedBy(
@@ -54,14 +55,14 @@ export class PostResolver {
     @Arg("text", () => String) text: string,
     @Arg("publisher", () => String, {nullable: true}) publisher?: string,    
   ): Promise<Post>{
-    const post = await Post.create({id: uuid(), title, text, authorId: req!.session!.userId, publisher }).save();
+    const post = await Post.create({id: uuid(), title, text, authorId: req.user.id, publisher }).save();
     return post;
   }
 
   @Mutation(() => Post, {nullable: true})
   @UseMiddleware(IsAuthenticated)
   async updatePost(
-    @Ctx() ctx: ContextType,
+    @Ctx() { req }: ContextType,
     @Arg("id", () => String) id: string,
     @Arg("title", () => String, {nullable: true}) title?: string,
     @Arg("text", () => String, {nullable: true}) text?: string,
@@ -72,8 +73,9 @@ export class PostResolver {
     if(!post){
       return null;
     }
-    if(ctx.req.session!.userId !== post.authorId){
-      throw new Error("Unauthorized - Only authors can edit their post");
+    
+    if(req.user.id !== post.authorId){
+      throw new AuthenticationError("Unauthorized - Only authors can edit their post");
     }
     if(typeof title !== "undefined"){
       post.title = title;
@@ -91,7 +93,7 @@ export class PostResolver {
   @Mutation(() => Boolean)
   @UseMiddleware(IsAuthenticated)
   async deletePost(
-    @Ctx() ctx: ContextType,
+    @Ctx() { req }: ContextType,
     @Arg("id", () => String) id: string
   ): Promise<boolean>{
     const post = await Post.findOne({where: { id }});
@@ -99,7 +101,7 @@ export class PostResolver {
       return false;
     }
 
-    if(ctx.req.session!.userId !== post.authorId){
+    if(req.session!.userId !== post.authorId){
       throw new Error("Unauthorized - Only authors can delete their posts");
     }
 

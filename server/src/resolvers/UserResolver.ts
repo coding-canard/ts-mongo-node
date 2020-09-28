@@ -4,6 +4,10 @@ import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-g
 import { User } from './../entities/User';
 import { Post } from './../entities/Post';
 import { PostsLoader } from './../dataloaders/PostsLoader';
+import { ContextType } from './../types/ContextType';
+import { generateTokens } from '../utils/GenerateTokens';
+// import { generateCookies } from './../utils/generateCookies';
+import { ACCESS_COOKIE_EXPIRES, ACCESS_COOKIE_NAME, REFRESH_COOKIE_EXPIRES, REFRESH_COOKIE_NAME, __PROD__ } from '../Constants';
 
 @Resolver(User)
 export class UserResolver{
@@ -26,22 +30,18 @@ export class UserResolver{
     @Arg("email", () => String) email: string,
     @Arg("password", () => String) password: string,
     @Arg("username", () => String) username: string
-  ){
+  ): Promise<String>{
     const hashedPassword = await argon2.hash(password);
     const user = await User.create({id: uuid(), email, password: hashedPassword, username}).save();
-    return user;
+    return user.id;
   }
 
   @Mutation(() => User, {nullable: true})
   async login(
     @Arg("usernameOrEmail", () => String) usernameOrEmail: string,
     @Arg("password", () => String) password: string,
-    @Ctx() ctx : any
+    @Ctx() { res } : ContextType
   ): Promise<User | null>{
-    if(ctx.req.session.userId){
-      throw new Error("An user is already logged in");
-    }
-
     const user = await User.findOne( usernameOrEmail.indexOf('@') > -1 ? { where: { email: usernameOrEmail } } : { where: { username: usernameOrEmail } })
     if(!user){
       throw new Error("Invalid credentials");
@@ -52,23 +52,22 @@ export class UserResolver{
       throw new Error("Invalid credentials");
     }
 
-    ctx.req.session.userId = user.id;
-
+    const tokens = generateTokens({id: user.id, username: user.username });
+    // const cookies = generateCookies(tokens);
+    res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {maxAge: ACCESS_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
+    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {maxAge: REFRESH_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
+    // TODO: IMPLEMENT THE TOKEN VALIDATION IN AUTH MIDDLEWARE
+ 
     return user;
   }
 
   @Mutation(() => Boolean)
-  logout(@Ctx() { req, res }: any): Promise<boolean>{
-    return new Promise((resolve) => 
-      req.session.destroy((err: any) => {
-        res.clearCookie(process.env.COOKIE_NAME);
-        if(err){
-          resolve(false);
-          return;
-        }
-        resolve(true);
-      })
-    )
+  logout(@Ctx() { res }: any): Promise<boolean>{
+    return new Promise((resolve) => {
+      res.clearCookie(ACCESS_COOKIE_NAME);
+      res.clearCookie(REFRESH_COOKIE_NAME);
+      resolve(true);
+    })
   }
 
   @Mutation(() => Boolean)
@@ -77,7 +76,7 @@ export class UserResolver{
   ): Promise<boolean>{
     const user = await User.findOne({where: { id }});
     if(!user){
-      return false;
+      return true;
     }
     await User.delete({ id });
     return true;
