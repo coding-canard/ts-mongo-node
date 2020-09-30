@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import { PostResolver } from './resolvers/PostResolver';
 import { UserResolver } from "./resolvers/UserResolver";
 import { ContextType } from "./types/ContextType";
+import { PublisherResolver } from "./resolvers/PublisherResolver";
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ const main = async() => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [PostResolver, UserResolver],
+      resolvers: [PostResolver, UserResolver, PublisherResolver],
       validate: false,
     }),
     context: ({req, res}: ContextType) => ({

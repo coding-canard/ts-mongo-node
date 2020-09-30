@@ -2,14 +2,14 @@ import { Field, Int, ObjectType } from "type-graphql";
 import {
   BaseEntity, Column,
   CreateDateColumn, Entity,
-  ManyToOne, ObjectIdColumn, PrimaryColumn, UpdateDateColumn
+  ObjectIdColumn, OneToMany, PrimaryColumn, UpdateDateColumn
 } from "typeorm";
-import { Publisher } from "./Publisher";
+import { Post } from "./Post";
 import { User } from "./User";
 
 @ObjectType()
 @Entity()
-export class Post extends BaseEntity {
+export class Publisher extends BaseEntity {
   @ObjectIdColumn()
   _id!: string;
 
@@ -19,29 +19,27 @@ export class Post extends BaseEntity {
 
   @Field(() => String)
   @Column("string")
-  title!: string;
-
-  @Field(() => String)
-  @Column("string")
-  text!: string;
-
-  @Column("string", {nullable: true})
-  publisherId: string;
-
-  @Field({nullable: true})
-  @ManyToOne(() => Publisher, (publisher) => publisher.posts)
-  publisher: Publisher;
+  name!: string;
 
   @Field(() => Int)
   @Column({type: "int"})
-  claps: number = 0;
+  followers: number = 0;
+
+  @Field(() => [Post]!)
+  @OneToMany(() => Post, (post) => post.publisher)
+  posts: Post[];
 
   @Column("string")
-  authorId!: string;
+  createdBy!: string;
 
-  @Field()
-  @ManyToOne(() => User, (user) => user.posts)
-  author!: User;
+  @Column("string")
+  updatedBy!: string;
+
+  @Field(() => User)
+  creator!: User;
+
+  @Field(() => User)
+  updator!: User;
 
   @Field(() => String)
   @CreateDateColumn()

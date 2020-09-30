@@ -6,6 +6,8 @@ import { IsAuthenticated } from "../middlewares/IsAuthenticated";
 import { ContextType } from './../types/ContextType';
 import { User } from "./../entities/User";
 import { UsersLoader } from "./../dataloaders/UsersLoader";
+import { Publisher } from "./../entities/Publisher";
+import { PublishersLoader } from "./../dataloaders/PublishersLoader";
 
 @Resolver(Post)
 export class PostResolver {
@@ -14,7 +16,18 @@ export class PostResolver {
   async author(
     @Root() post: Post
    ){
-      return UsersLoader.load(post.authorId as any);
+      return await UsersLoader.load(post.authorId as any);
+   }
+
+   @FieldResolver(() => Publisher)
+  async publisher(
+    @Root() post: Post
+   ){
+     if(typeof post.publisherId !== 'undefined'){
+       return await PublishersLoader.load(post.publisherId as any); 
+     } else {
+       return null;
+     }
    }
 
   @Query(() => [Post]!)
@@ -27,8 +40,8 @@ export class PostResolver {
   async post(
     @Arg("id", () => String) id: string
   ): Promise<Post | undefined>{
-    const posts = await Post.findOne({where: { id }});
-    return posts;
+    const post = await Post.findOne({where: { id }});
+    return post;
   }
 
   @Query(() => [Post]!, {nullable: true})
@@ -53,9 +66,9 @@ export class PostResolver {
     @Ctx() { req }: ContextType,
     @Arg("title", () => String) title: string,
     @Arg("text", () => String) text: string,
-    @Arg("publisher", () => String, {nullable: true}) publisher?: string,    
+    @Arg("publisherId", () => String, {nullable: true}) publisherId?: string,    
   ): Promise<Post>{
-    const post = await Post.create({id: uuid(), title, text, authorId: req.user.id, publisher }).save();
+    const post = await Post.create({id: uuid(), title, text, authorId: req.user.id, publisherId }).save();
     return post;
   }
 
@@ -66,7 +79,7 @@ export class PostResolver {
     @Arg("id", () => String) id: string,
     @Arg("title", () => String, {nullable: true}) title?: string,
     @Arg("text", () => String, {nullable: true}) text?: string,
-    @Arg("publisher", () => String, {nullable: true}) publisher?: string
+    @Arg("publisherId", () => String, {nullable: true}) publisherId?: string
   ): Promise<Post | null>{
 
     const post = await Post.findOne({where: { id }});
@@ -83,8 +96,8 @@ export class PostResolver {
     if(typeof text !== "undefined"){
       post.text = text;
     }
-    if(typeof publisher !== "undefined"){
-      post.publisher = publisher;
+    if(typeof publisherId !== "undefined"){
+      post.publisherId = publisherId;
     }
     await post.save();
     return post;

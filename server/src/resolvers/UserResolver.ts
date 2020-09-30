@@ -5,7 +5,7 @@ import { User } from './../entities/User';
 import { Post } from './../entities/Post';
 import { PostsLoader } from './../dataloaders/PostsLoader';
 import { ContextType } from './../types/ContextType';
-import { generateTokens } from '../utils/GenerateTokens';
+import { generateTokens } from './../utils/GenerateTokens';
 // import { generateCookies } from './../utils/generateCookies';
 import { ACCESS_COOKIE_EXPIRES, ACCESS_COOKIE_NAME, REFRESH_COOKIE_EXPIRES, REFRESH_COOKIE_NAME, __PROD__ } from '../Constants';
 
@@ -16,7 +16,7 @@ export class UserResolver{
   async posts(
     @Root() user: User
   ){
-    return PostsLoader.load(user.id as any);
+    return PostsLoader('authorId').load(user.id as any);
   }
 
   @Query(() => [User]!)
@@ -56,7 +56,6 @@ export class UserResolver{
     // const cookies = generateCookies(tokens);
     res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {maxAge: ACCESS_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
     res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {maxAge: REFRESH_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
-    // TODO: IMPLEMENT THE TOKEN VALIDATION IN AUTH MIDDLEWARE
  
     return user;
   }
