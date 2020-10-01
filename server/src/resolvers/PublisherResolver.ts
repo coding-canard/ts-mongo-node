@@ -5,7 +5,7 @@ import { ContextType } from './../types/ContextType';
 import { Publisher } from "./../entities/Publisher";
 import { User } from "./../entities/User";
 import { Post } from "./../entities/Post";
-import { PostsLoader } from "./../dataloaders/PostsLoader";
+import { PostsLoaderByPublisher } from "./../dataloaders/PostsLoader";
 
 @Resolver(Publisher)
 export class PublisherResolver {
@@ -28,7 +28,7 @@ export class PublisherResolver {
   async posts(
     @Root() publisher: Publisher
   ){
-    return PostsLoader('publisherId').load(publisher.id as any);
+    return PostsLoaderByPublisher.load(publisher.id as any);
   }
 
   @Query(() => [Publisher]!)
