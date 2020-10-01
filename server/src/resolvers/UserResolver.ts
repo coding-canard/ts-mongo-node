@@ -1,13 +1,14 @@
 import argon2 from 'argon2';
 import {v4 as uuid} from 'uuid';
-import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import { User } from './../entities/User';
 import { Post } from './../entities/Post';
-import { PostsLoader } from './../dataloaders/PostsLoader';
+import { PostsLoaderByAuthor } from './../dataloaders/PostsLoader';
 import { ContextType } from './../types/ContextType';
 import { generateTokens } from './../utils/GenerateTokens';
 // import { generateCookies } from './../utils/generateCookies';
 import { ACCESS_COOKIE_EXPIRES, ACCESS_COOKIE_NAME, REFRESH_COOKIE_EXPIRES, REFRESH_COOKIE_NAME, __PROD__ } from '../Constants';
+import { IsAuthenticated } from './../middlewares/IsAuthenticated';
 
 @Resolver(User)
 export class UserResolver{
@@ -16,7 +17,7 @@ export class UserResolver{
   async posts(
     @Root() user: User
   ){
-    return PostsLoader('authorId').load(user.id as any);
+    return PostsLoaderByAuthor.load(user.id as any);
   }
 
   @Query(() => [User]!)
@@ -25,7 +26,7 @@ export class UserResolver{
     return posts;
   }
 
-  @Mutation(() => User!)
+  @Mutation(() => String!)
   async register(
     @Arg("email", () => String) email: string,
     @Arg("password", () => String) password: string,
@@ -61,7 +62,7 @@ export class UserResolver{
   }
 
   @Mutation(() => Boolean)
-  logout(@Ctx() { res }: any): Promise<boolean>{
+  logout(@Ctx() { res }: ContextType): Promise<boolean>{
     return new Promise((resolve) => {
       res.clearCookie(ACCESS_COOKIE_NAME);
       res.clearCookie(REFRESH_COOKIE_NAME);
@@ -70,7 +71,9 @@ export class UserResolver{
   }
 
   @Mutation(() => Boolean)
+  @UseMiddleware(IsAuthenticated)
   async deleteUser(
+    @Ctx() { req, res }: ContextType,
     @Arg("id", () => String) id: string
   ): Promise<boolean>{
     const user = await User.findOne({where: { id }});
@@ -78,6 +81,10 @@ export class UserResolver{
       return true;
     }
     await User.delete({ id });
+    if(id === req.user.id){
+      res.clearCookie(ACCESS_COOKIE_NAME);
+      res.clearCookie(REFRESH_COOKIE_NAME);
+    }
     return true;
   }
 }
