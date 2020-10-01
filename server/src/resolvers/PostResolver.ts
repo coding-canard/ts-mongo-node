@@ -52,13 +52,13 @@ export class PostResolver {
     return posts;
   }
 
-  // @Query(() => [Post]!, {nullable: true})
-  // async publishedBy(
-  //   @Arg("publisher", () => String) publisherId: string
-  // ): Promise<Post[]>{
-  //   const posts = await Post.findOne({where: { publisherId }});;
-  //   return posts;
-  // }
+  @Query(() => [Post]!, {nullable: true})
+  async publishedBy(
+    @Arg("publisherId", () => String) publisherId: string
+  ): Promise<Post[]>{
+    const posts = await Post.find({where: { publisherId }});
+    return posts;
+  }
 
   @Mutation(() => Post)
   @UseMiddleware(IsAuthenticated)
