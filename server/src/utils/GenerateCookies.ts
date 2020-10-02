@@ -1,4 +1,4 @@
-import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, __PROD__ } from "../Constants";
+import { __PROD__ } from "../Constants";
 
 export const generateCookies = (tokens: any) => {
   const cookieOptions = {
@@ -9,7 +9,7 @@ export const generateCookies = (tokens: any) => {
   };
 
   return {
-    access: [ACCESS_COOKIE_NAME, tokens.accessToken, cookieOptions],
-    refresh: [REFRESH_COOKIE_NAME, tokens.refreshToken, cookieOptions]
+    access: [process.env.ACCESS_COOKIE_NAME, tokens.accessToken, cookieOptions],
+    refresh: [process.env.REFRESH_COOKIE_NAME, tokens.refreshToken, cookieOptions]
   };
 }
