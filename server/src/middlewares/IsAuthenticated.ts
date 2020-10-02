@@ -1,12 +1,12 @@
-import { MiddlewareFn } from "type-graphql";
+import { MiddlewareFn, NextFn, ResolverData } from "type-graphql";
 import { AuthenticationError } from "apollo-server-express";
 import { ContextType } from "./../types/ContextType";
-import { REFRESH_COOKIE_NAME, ACCESS_COOKIE_NAME, ACCESS_SECRET, ACCESS_COOKIE_EXPIRES, __PROD__, REFRESH_SECRET } from "../Constants";
+import { REFRESH_COOKIE_NAME, ACCESS_COOKIE_NAME, ACCESS_COOKIE_EXPIRES, __PROD__ } from "../Constants";
 import { validateToken } from "./../utils/ValidateToken";
 import { User } from "./../entities/User";
 import { generateTokens } from "./../utils/GenerateTokens";
 
-export const IsAuthenticated: MiddlewareFn<ContextType> = async ({ context }, next) => {
+export const IsAuthenticated: MiddlewareFn<ContextType> = async ({ context }: ResolverData<ContextType>, next: NextFn) => {
   const { req, res } = context;
   const refreshToken = req.cookies[REFRESH_COOKIE_NAME];
   const accessToken = req.cookies[ACCESS_COOKIE_NAME];
@@ -15,15 +15,14 @@ export const IsAuthenticated: MiddlewareFn<ContextType> = async ({ context }, ne
     throw new AuthenticationError("Authentication is required for this action.")
   };
 
-  const decodedAccessToken = validateToken(accessToken, ACCESS_SECRET);
+  const decodedAccessToken = validateToken(accessToken, process.env.ACCESS_SECRET!);
   // console.log("Decoded:", decodedAccessToken)
   if (decodedAccessToken && decodedAccessToken.user) {
     req.user = decodedAccessToken.user;
-    console.log("REQ USER:", req.user);
     return next();
   }
 
-  const decodedRefreshToken = validateToken(refreshToken, REFRESH_SECRET);
+  const decodedRefreshToken = validateToken(refreshToken, process.env.REFRESH_SECRET!);
   if (decodedRefreshToken && decodedRefreshToken.user){
     const user = await User.findOne({ where: { id: decodedRefreshToken.user.id }})
     if(!user){
