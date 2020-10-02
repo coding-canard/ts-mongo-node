@@ -6,23 +6,24 @@ import { validateToken } from "./../utils/ValidateToken";
 import { User } from "./../entities/User";
 import { generateTokens } from "./../utils/GenerateTokens";
 
-export const IsAuthenticated: MiddlewareFn<ContextType> = async ({ context }: ResolverData<ContextType>, next: NextFn) => {
+export const IsAuthenticated = (message?: string): MiddlewareFn<ContextType> => async ({ context }: ResolverData<ContextType>, next: NextFn) => {
   const { req, res } = context;
   const refreshToken = req.cookies[REFRESH_COOKIE_NAME];
   const accessToken = req.cookies[ACCESS_COOKIE_NAME];
 
   if (!accessToken && !refreshToken){
-    throw new AuthenticationError("Authentication is required for this action.")
+    throw new AuthenticationError(message ? message : "Authentication is required for this action.")
   };
 
   const decodedAccessToken = validateToken(accessToken, process.env.ACCESS_SECRET!);
-  // console.log("Decoded:", decodedAccessToken)
+  // console.log("Decoded Access token:", decodedAccessToken)
   if (decodedAccessToken && decodedAccessToken.user) {
     req.user = decodedAccessToken.user;
     return next();
   }
 
   const decodedRefreshToken = validateToken(refreshToken, process.env.REFRESH_SECRET!);
+  // console.log("Decoded Refresh token:", decodedRefreshToken)
   if (decodedRefreshToken && decodedRefreshToken.user){
     const user = await User.findOne({ where: { id: decodedRefreshToken.user.id }})
     if(!user){
@@ -31,8 +32,8 @@ export const IsAuthenticated: MiddlewareFn<ContextType> = async ({ context }: Re
     }
 
     const tokens = generateTokens({id: user!.id, username: user!.username });
-    req.user = decodedRefreshToken.user;
     res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {maxAge: ACCESS_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
+    req.user = decodedRefreshToken.user;
     return next();
   }
 
