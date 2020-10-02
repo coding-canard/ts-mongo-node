@@ -71,7 +71,7 @@ export class UserResolver{
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated())
   async deleteUser(
     @Ctx() { req, res }: ContextType,
     @Arg("id", () => String) id: string

@@ -1,6 +1,5 @@
 import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import {v4 as uuid} from 'uuid';
-import { AuthenticationError } from "apollo-server-express";
 import { Post } from "./../entities/Post";
 import { IsAuthenticated } from "../middlewares/IsAuthenticated";
 import { ContextType } from './../types/ContextType';
@@ -8,6 +7,7 @@ import { User } from "./../entities/User";
 import { UsersLoader } from "./../dataloaders/UsersLoader";
 import { Publisher } from "./../entities/Publisher";
 import { PublishersLoader } from "./../dataloaders/PublishersLoader";
+import { IsAuthor } from "./../middlewares/IsAuthor";
 
 @Resolver(Post)
 export class PostResolver {
@@ -61,7 +61,7 @@ export class PostResolver {
   }
 
   @Mutation(() => Post)
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated())
   async createPost(
     @Ctx() { req }: ContextType,
     @Arg("title", () => String) title: string,
@@ -73,9 +73,8 @@ export class PostResolver {
   }
 
   @Mutation(() => Post, {nullable: true})
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated(), IsAuthor("Only authors can edit their posts."))
   async updatePost(
-    @Ctx() { req }: ContextType,
     @Arg("id", () => String) id: string,
     @Arg("title", () => String, {nullable: true}) title?: string,
     @Arg("text", () => String, {nullable: true}) text?: string,
@@ -86,10 +85,7 @@ export class PostResolver {
     if(!post){
       return null;
     }
-    
-    if(req.user.id !== post.authorId){
-      throw new AuthenticationError("Unauthorized - Only authors can edit their post");
-    }
+
     if(typeof title !== "undefined"){
       post.title = title;
     }
@@ -104,18 +100,13 @@ export class PostResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated(), IsAuthor("Only authors can delete their posts."))
   async deletePost(
-    @Ctx() { req }: ContextType,
     @Arg("id", () => String) id: string
   ): Promise<boolean>{
     const post = await Post.findOne({where: { id }});
     if(!post){
       return false;
-    }
-
-    if(req.session!.userId !== post.authorId){
-      throw new Error("Unauthorized - Only authors can delete their posts");
     }
 
     await Post.delete( id );

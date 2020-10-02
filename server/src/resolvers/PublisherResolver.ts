@@ -46,7 +46,7 @@ export class PublisherResolver {
   }
 
   @Mutation(() => Publisher)
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated())
   async createPublisher(
     @Ctx() { req }: ContextType,
     @Arg("name", () => String) name: string
@@ -56,7 +56,7 @@ export class PublisherResolver {
   }
 
   @Mutation(() => Publisher, {nullable: true})
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated())
   async updatePublisher(
     @Ctx() { req }: ContextType,
     @Arg("id", () => String) id: string,
@@ -77,7 +77,7 @@ export class PublisherResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(IsAuthenticated)
+  @UseMiddleware(IsAuthenticated())
   async deletePublisher(
     @Ctx() { req }: ContextType,
     @Arg("id", () => String) id: string
