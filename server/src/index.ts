@@ -2,7 +2,7 @@ import "reflect-metadata";
 import * as dotenv from 'dotenv';
 import express from "express";
 import { createConnection } from "typeorm";
-import { ApolloServer } from 'apollo-server-express';
+import { ApolloServer, AuthenticationError, ForbiddenError } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import cookieParser from "cookie-parser";
 // import cors from 'cors';
@@ -11,8 +11,28 @@ import { PostResolver } from './resolvers/PostResolver';
 import { UserResolver } from "./resolvers/UserResolver";
 import { ContextType } from "./types/ContextType";
 import { PublisherResolver } from "./resolvers/PublisherResolver";
+import { GraphQLRequestContext, GraphQLRequestListener } from "apollo-server-plugin-base";
 
 dotenv.config();
+
+const ErrorRaisingPlugin: any = {
+  requestDidStart(): GraphQLRequestListener | void {
+    return {
+      willSendResponse({context, errors}: GraphQLRequestContext) {
+        if(errors && errors.length > 0){
+          if(errors[0].originalError instanceof ForbiddenError){
+            context.res.statusCode = 403;
+          }
+          else if(errors[0].originalError instanceof AuthenticationError){
+            context.res.statusCode = 401;
+          } else {
+            context.res.statusCode = 500;
+          }
+        }
+      },
+    };
+  },
+};
 
 const main = async() => {
   await createConnection();
@@ -23,8 +43,17 @@ const main = async() => {
       validate: false,
     }),
     context: ({req, res}: ContextType) => ({
-      req, res, //redis
+      req, res,
     }),
+    formatError: err => {
+      if(err.originalError instanceof ForbiddenError )
+        return ({message: err.message, statusCode: 403})
+      else if(err.originalError instanceof AuthenticationError )
+        return ({message: err.message, statusCode: 401})
+      
+      return ({message: "Internal server error", statusCode: 500})
+    },
+    plugins: [ErrorRaisingPlugin]
   });
 
   const app = express();
