@@ -17,7 +17,7 @@ export class User extends BaseEntity {
   @PrimaryColumn("string")
   id!: string;
 
-  @Field(() => String)
+  // @Field(() => String, {nullable: true})
   @Column("string", {unique: true})
   email!: string;
 

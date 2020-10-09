@@ -22,8 +22,8 @@ export class UserResolver{
 
   @Query(() => [User]!)
   async users(): Promise<User[]>{
-    const posts = await User.find({});
-    return posts;
+    const users = await User.find({});
+    return users;
   }
 
   @Mutation(() => String!)
