@@ -9,6 +9,7 @@ import { generateTokens } from './../utils/GenerateTokens';
 // import { generateCookies } from './../utils/generateCookies';
 import { ACCESS_COOKIE_EXPIRES, ACCESS_COOKIE_NAME, REFRESH_COOKIE_EXPIRES, REFRESH_COOKIE_NAME, __PROD__ } from '../Constants';
 import { IsAuthenticated } from './../middlewares/IsAuthenticated';
+import { IsOwner } from '../middlewares/IsOwner';
 
 @Resolver(User)
 export class UserResolver{
@@ -71,7 +72,7 @@ export class UserResolver{
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(IsAuthenticated())
+  @UseMiddleware(IsAuthenticated(), IsOwner("One acount holder can delete their"))
   async deleteUser(
     @Ctx() { req, res }: ContextType,
     @Arg("id", () => String) id: string

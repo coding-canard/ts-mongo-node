@@ -2,7 +2,7 @@ import { MiddlewareFn, NextFn, ResolverData } from "type-graphql";
 import { Post } from "../entities/Post";
 import { ContextType } from "../types/ContextType";
 
-export const IsAuthor = (message?: string): MiddlewareFn<ContextType> => async ({ context, args }: ResolverData<ContextType>, next: NextFn) => {
+export const IsOwner = (message?: string): MiddlewareFn<ContextType> => async ({ context, args }: ResolverData<ContextType>, next: NextFn) => {
 
   const count = await Post.count({ id: args.id, authorId: context.req.user.id});
 
