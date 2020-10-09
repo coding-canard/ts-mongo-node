@@ -9,7 +9,8 @@ import { generateTokens } from './../utils/GenerateTokens';
 // import { generateCookies } from './../utils/generateCookies';
 import { ACCESS_COOKIE_EXPIRES, ACCESS_COOKIE_NAME, REFRESH_COOKIE_EXPIRES, REFRESH_COOKIE_NAME, __PROD__ } from '../Constants';
 import { IsAuthenticated } from './../middlewares/IsAuthenticated';
-import { IsOwner } from '../middlewares/IsOwner';
+// import { IsOwner } from '../middlewares/IsOwner';
+import { InvalidCredentialsError } from './../errors/InvalidCredentialsError';
 
 @Resolver(User)
 export class UserResolver{
@@ -29,12 +30,14 @@ export class UserResolver{
 
   @Mutation(() => String!)
   async register(
+    @Ctx() { res } : ContextType,
     @Arg("email", () => String) email: string,
     @Arg("password", () => String) password: string,
     @Arg("username", () => String) username: string
   ): Promise<String>{
     const hashedPassword = await argon2.hash(password);
     const user = await User.create({id: uuid(), email, password: hashedPassword, username}).save();
+    res.status(201);
     return user.id;
   }
 
@@ -46,16 +49,17 @@ export class UserResolver{
   ): Promise<User | null>{
     const user = await User.findOne( usernameOrEmail.indexOf('@') > -1 ? { where: { email: usernameOrEmail } } : { where: { username: usernameOrEmail } })
     if(!user){
-      throw new Error("Invalid credentials");
+      throw new InvalidCredentialsError("Invalid credentials");
     }
 
     const passwordMatch = await argon2.verify(user.password, password);
     if(!passwordMatch){
-      throw new Error("Invalid credentials");
+      throw new InvalidCredentialsError("Invalid credentials");
     }
 
     const tokens = generateTokens({id: user.id, username: user.username });
     // const cookies = generateCookies(tokens);
+    res.status(202);
     res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {maxAge: ACCESS_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
     res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {maxAge: REFRESH_COOKIE_EXPIRES, httpOnly: true, sameSite: "lax", secure: __PROD__, domain: __PROD__ ? "domain" : undefined});
  
@@ -65,6 +69,7 @@ export class UserResolver{
   @Mutation(() => Boolean)
   logout(@Ctx() { res }: ContextType): Promise<boolean>{
     return new Promise((resolve) => {
+      res.status(202);
       res.clearCookie(ACCESS_COOKIE_NAME);
       res.clearCookie(REFRESH_COOKIE_NAME);
       resolve(true);
@@ -72,12 +77,13 @@ export class UserResolver{
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(IsAuthenticated(), IsOwner("One acount holder can delete their"))
+  @UseMiddleware(IsAuthenticated())
   async deleteUser(
     @Ctx() { req, res }: ContextType,
     @Arg("id", () => String) id: string
   ): Promise<boolean>{
     const user = await User.findOne({where: { id }});
+    res.status(202);
     if(!user){
       return true;
     }

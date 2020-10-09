@@ -1,4 +1,4 @@
-export class UnauthorizedError extends Error {
+export class NotFoundError extends Error {
   statusCode: number;
   
   constructor (message: string) {
@@ -6,6 +6,6 @@ export class UnauthorizedError extends Error {
     Error.captureStackTrace(this, this.constructor);
 
     this.name = this.constructor.name
-    this.statusCode = 401;
+    this.statusCode = 404;
   }
 }

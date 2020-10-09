@@ -12,6 +12,7 @@ export const IsAuthenticated = (message?: string): MiddlewareFn<ContextType> => 
   const accessToken = req.cookies[ACCESS_COOKIE_NAME];
 
   if (!accessToken && !refreshToken){
+    res.status(401);
     throw new AuthenticationError(message ? message : "Authentication is required for this action.")
   };
 
@@ -27,6 +28,7 @@ export const IsAuthenticated = (message?: string): MiddlewareFn<ContextType> => 
   if (decodedRefreshToken && decodedRefreshToken.user){
     const user = await User.findOne({ where: { id: decodedRefreshToken.user.id }})
     if(!user){
+      res.status(401);
       res.clearCookie(ACCESS_COOKIE_NAME);
       res.clearCookie(REFRESH_COOKIE_NAME);
     }

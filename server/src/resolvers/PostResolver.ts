@@ -7,7 +7,7 @@ import { User } from "./../entities/User";
 import { UsersLoader } from "./../dataloaders/UsersLoader";
 import { Publisher } from "./../entities/Publisher";
 import { PublishersLoader } from "./../dataloaders/PublishersLoader";
-import { IsOwner } from "./../middlewares/IsOwner";
+import { IsAuthor } from "../middlewares/IsAuthor";
 
 @Resolver(Post)
 export class PostResolver {
@@ -73,7 +73,7 @@ export class PostResolver {
   }
 
   @Mutation(() => Post, {nullable: true})
-  @UseMiddleware(IsAuthenticated(), IsOwner("Only authors can edit their posts."))
+  @UseMiddleware(IsAuthenticated(), IsAuthor("Only authors can edit their posts."))
   async updatePost(
     @Arg("id", () => String) id: string,
     @Arg("title", () => String, {nullable: true}) title?: string,
@@ -100,7 +100,7 @@ export class PostResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(IsAuthenticated(), IsOwner("Only authors can delete their posts."))
+  @UseMiddleware(IsAuthenticated(), IsAuthor("Only authors can delete their posts."))
   async deletePost(
     @Arg("id", () => String) id: string
   ): Promise<boolean>{

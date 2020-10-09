@@ -1,4 +1,4 @@
-export class UnauthorizedError extends Error {
+export class InvalidCredentialsError extends Error {
   statusCode: number;
   
   constructor (message: string) {

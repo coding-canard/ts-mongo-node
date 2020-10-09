@@ -55,7 +55,6 @@ const main = async() => {
         return ({message: err.message, statusCode: 401})
       else if(err.originalError instanceof UnauthorizedError )
         return ({message: err.message, statusCode: 401})
-      
       return ({message: "Internal server error", statusCode: 500})
     },
     plugins: [ErrorRaisingPlugin]
