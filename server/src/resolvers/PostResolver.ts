@@ -31,7 +31,8 @@ export class PostResolver {
    }
 
   @Query(() => [Post]!)
-  async posts(): Promise<Post[]>{
+  async posts(
+  ): Promise<Post[]>{
     const posts = await (await Post.find({})).sort((p1, p2) => p1.createdAt < p2.createdAt ? 1 : -1);
     return posts;
   }
@@ -63,18 +64,20 @@ export class PostResolver {
   @Mutation(() => Post)
   @UseMiddleware(IsAuthenticated())
   async createPost(
-    @Ctx() { req }: ContextType,
+    @Ctx() { req, res }: ContextType,
     @Arg("title", () => String) title: string,
     @Arg("text", () => String) text: string,
     @Arg("publisherId", () => String, {nullable: true}) publisherId?: string,    
   ): Promise<Post>{
     const post = await Post.create({id: uuid(), title, text, authorId: req.user.id, publisherId }).save();
+    res.status(201);
     return post;
   }
 
   @Mutation(() => Post, {nullable: true})
   @UseMiddleware(IsAuthenticated(), IsAuthor("Only authors can edit their posts."))
   async updatePost(
+    @Ctx() { res }: ContextType,
     @Arg("id", () => String) id: string,
     @Arg("title", () => String, {nullable: true}) title?: string,
     @Arg("text", () => String, {nullable: true}) text?: string,
@@ -83,6 +86,7 @@ export class PostResolver {
 
     const post = await Post.findOne({where: { id }});
     if(!post){
+      res.status(404);
       return null;
     }
 
@@ -96,15 +100,18 @@ export class PostResolver {
       post.publisherId = publisherId;
     }
     await post.save();
+    res.status(202);
     return post;
   }
 
   @Mutation(() => Boolean)
   @UseMiddleware(IsAuthenticated(), IsAuthor("Only authors can delete their posts."))
   async deletePost(
+    @Ctx() { res }: ContextType,
     @Arg("id", () => String) id: string
   ): Promise<boolean>{
     const post = await Post.findOne({where: { id }});
+    res.status(202);
     if(!post){
       return false;
     }
