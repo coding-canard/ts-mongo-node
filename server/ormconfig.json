@@ -1,0 +1,10 @@
+{
+  "type": "mongodb",
+  "logging": true,
+  "url": "mongodb+srv://mongo:mongo@cluster0.2ltaj.mongodb.net/nodets?retryWrites=true&w=majority",
+  "entities": ["dist/entities/*.js"],
+  "migrations": ["dist/migrations/*.js"],
+  "subscribers": ["dist/subscribers/*.js"],
+  "synchronize": true,
+  "useUnifiedTopology": true
+}
